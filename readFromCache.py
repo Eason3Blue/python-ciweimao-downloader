@@ -1,11 +1,11 @@
 from pathlib import Path
 
-def read_lines_if_exists(file_path):
-    path = Path(file_path)
+def read(filePath):
+    path = Path(filePath)
     if not path.exists():
-        print(f"文件不存在：{file_path}")
+        print(f"文件不存在：{filePath}")
         return []
 
     with open(path, 'r', encoding='utf-8') as f:
-        lines = f.read().split('\n')
-    return lines
+        readResponse = f.read().split('\n')
+    return readResponse
