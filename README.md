@@ -1,6 +1,6 @@
 # PythonCiweimaoDownloader
 
-[蓬莱山辉不了昼夜@Bilibili](https://space.bilibili.com/348637735)
+[https://space.bilibili.com/348637735](蓬莱山辉不了昼夜@Bilibili)
 
 #### 介绍
 使用python编写的针对刺猬猫的下载程序，采用了简单易懂的模块化设计，用main.py将一切粘连起来，可以简单地登陆，下载小说并自动压入epub，要求安装了chrome浏览器
