@@ -1,69 +1,49 @@
+import getBookself
 import getLogin
 import readFromCache
 import time
 import getBookDetail
-from pathlib import Path
+import download
 
-expireTime = 0
-accountSession = accountLoginToken = accountUserID = accountReaderID = None
+ci_session = None
+login_token = None
+reader_id = None
+user_id = None
+ci_session = None
+exTimest = 0
 
-if __name__ == "__main__":
-    #读取缓存
-    cacheReadResponse = readFromCache.read('./accountCookies.cached')
-    if(len(cacheReadResponse) > 0):
-        accountCookies = eval(cacheReadResponse[0])
-        expireTime     = float(cacheReadResponse[1])
-    if(time.time() >= expireTime):
-        print("Session超时，正在重新登录...")
-        if(len(cacheReadResponse) == 0):
-            print("未检测到缓存，正在登录...")
-        responseCookies = getLogin.getLogin() #调用Chrome获取Cookies
-        for cookie in responseCookies:
-            if cookie['name'] == 'ci_session':
-                accountSession = cookie['value']
-            elif cookie['name'] == 'login_token':
-                accountLoginToken = cookie['value']
-            elif cookie['name'] == 'user_id':
-                accountUserID = cookie['value']
-            elif cookie['name'] == 'reader_id':
-                accountReaderID = cookie['value']
-        with open("accountCookies.cached", "w", encoding="utf-8") as f: #写入缓存
-            accountCookies = {
-                "ci_session" : accountSession,
-                "login_token": accountLoginToken,
-                "user_id"    :accountUserID,
-                "reader_id"  : accountReaderID
-            }
-            f.write(str(accountCookies) + "\n" + str(time.time() + 7200))
+lines = readFromCache.read_lines_if_exists('./cached.passport')
+if(len(lines) > 0):
+    login_token = lines[0]
+    reader_id = lines[1]
+    user_id = lines[2]
+    exTimest = lines[3]
+    ci_session = lines[4]
+print("Debug: ",login_token,"\n",reader_id,"\n",user_id,"\n",exTimest,"\n",ci_session)
+if (time.time() > float(exTimest) or len(lines) == 0): 
+	loginData = getLogin.getLogin()
+	for cookie in loginData:
+		if cookie['name'] == 'login_token':
+			login_token = cookie['value']
+		if cookie['name'] == 'reader_id':
+			reader_id = cookie['value']
+		if cookie['name'] == 'user_id':
+			user_id = cookie['value']
+		if cookie['name'] == 'ci_session':
+			ci_session = cookie['value']
+	print("Debug: ",login_token,"\n",reader_id,"\n",user_id,"\n")
+	# 在 Python 中打开文件并使用 utf-8 编码
+	data = data = login_token + "\n" + reader_id + "\n" + user_id + "\n" + str(int(time.time() + 7200)) + "\n" + ci_session
 
-    for key,value in accountCookies.items():
-        print(key + ": " + value)
-    
-    while(True):
-        bookURL = input("输入小说链接(https://example.com): ")
-        bookID = int(bookURL.split("/")[-1])
-        print("book_id: " + str(bookID))
-        if(bookID < 1e8):
-            print("输入错误，请重新输入")
-            continue  
-    
-        bookAbout = getBookDetail.getName(accountCookies,bookURL)
-        if(bookAbout == False):
-            print("书籍不存在或未通过审核")
-            continue
-        bookName = bookAbout[0]
-        dirPath = Path(bookName)
-        dirPath.mkdir(parents=True, exist_ok=True)
-        coverImg = bookAbout[1]
-        with open(dirPath / "cover.jpg", "wb") as f:
-            f.write(coverImg)
-        
-        bookContent = getBookDetail.getContent(accountCookies,bookID)
-        count = 1
-        for chapterTitle, chapterID in bookContent:
-            print("进行第",count,"章下载，标题:",chapterTitle," ChapterID: ",chapterID)
-            chapterContent = chapterTitle + "\n" + getBookDetail.getChapter(accountCookies,chapterID)
-            print("下载完成")
-            with open(dirPath / (str(count) + ".html"), "w", encoding="utf-8") as f:
-                f.write(chapterContent)
-            count += 1
+	with open("cached.passport", "w", encoding="utf-8") as f:
+		f.write(data)
+
+# bookself = getBookself.getBookself(ci_session,login_token,user_id,reader_id)
+
+# print(bookself)
+book_id = input("输入一个小说id: ")
+download.main(ci_session,login_token,user_id,reader_id,book_id)
+# content = getBookDetail.getBookDetail(ci_session,login_token,user_id,reader_id,book_id)
+# # print(content)
+# for title, link in content:
+#     print(f"章节标题: {title}, 链接: {link}")
