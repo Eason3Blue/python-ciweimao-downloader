@@ -34,9 +34,12 @@ def extract_chapter_info(text):
 
     chapters = []
     for a_tag in soup.find_all('a', href=True):
+        # 获取链接文本和链接地址
         text = a_tag.get_text(strip=True)
         url = a_tag['href']
-        
+
+        # 检查是否为有效的章节链接
+        # 通过识别链接中的 URL 模式来过滤非章节链接
         if text and url.startswith("https://www.ciweimao.com/chapter/"):
             chapters.append((text, url.split("/")[-1]))
 
@@ -94,7 +97,7 @@ def getChapter(cookies,ID):
         return chapterJson['tip']
     keys = chapterJson.get("encryt_keys")
     content = chapterJson.get("chapter_content")
-    return pureChapter(decrypt.decrypt(content,keys,accessKey))
+    return decrypt.decrypt(content,keys,accessKey)
 
 def pureChapter(text):
     soup = BeautifulSoup(text, 'html.parser')
