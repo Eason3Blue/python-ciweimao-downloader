@@ -3,16 +3,17 @@ import readFromCache
 import time
 import getBookDetail
 from pathlib import Path
+import json
 
 expireTime = 0
 accountSession = accountLoginToken = accountUserID = accountReaderID = None
 
 if __name__ == "__main__":
     #读取缓存
-    cacheReadResponse = readFromCache.read('./accountCookies.cached')
+    cacheReadResponse = readFromCache.read('./accountCookies.json')
     if(len(cacheReadResponse) > 0):
-        accountCookies = eval(cacheReadResponse[0])
-        expireTime     = float(cacheReadResponse[1])
+        accountCookies = json.loads(cacheReadResponse)
+        expireTime     = float(accountCookies.get("expireTime",0))
     if(time.time() >= expireTime):
         print("Session超时，正在重新登录...")
         if(len(cacheReadResponse) == 0):
@@ -27,14 +28,15 @@ if __name__ == "__main__":
                 accountUserID = cookie['value']
             elif cookie['name'] == 'reader_id':
                 accountReaderID = cookie['value']
-        with open("accountCookies.cached", "w", encoding="utf-8") as f: #写入缓存
+        with open("accountCookies.json", "w", encoding="utf-8") as f: #写入缓存
             accountCookies = {
                 "ci_session" : accountSession,
                 "login_token": accountLoginToken,
-                "user_id"    :accountUserID,
-                "reader_id"  : accountReaderID
+                "user_id"    : accountUserID,
+                "reader_id"  : accountReaderID,
+                "expireTime" : str(time.time() + 7200)
             }
-            f.write(str(accountCookies) + "\n" + str(time.time() + 7200))
+            f.write(json.dumps(accountCookies))
 
     for key,value in accountCookies.items():
         print(key + ": " + value)

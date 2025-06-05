@@ -9,4 +9,6 @@ def getLogin():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.get("https://www.ciweimao.com/signup/login")
     input("请登录后按回车")
-    return driver.get_cookies()
+    response = driver.get_cookies()
+    driver.quit()
+    return response

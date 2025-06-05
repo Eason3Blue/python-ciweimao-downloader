@@ -7,5 +7,5 @@ def read(filePath):
         return []
 
     with open(path, 'r', encoding='utf-8') as f:
-        readResponse = f.read().split('\n')
+        readResponse = f.read()
     return readResponse

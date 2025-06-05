@@ -4,20 +4,28 @@ import decrypt
 import json
 import time
 
-headers = {
+defaultHeaders = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 Edg/137.0.0.0",
     "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-    "X-Requested-With": "XMLHttpRequest"
+    "X-Requested-With": "XMLHttpRequest",
+    "Accept": "application/json, text/javascript, */*; q=0.01",
+    "Accept-Encoding": "gzip, deflate, br, zstd",
+    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+    "Origin": "https://www.ciweimao.com",
+    "Priority": "u=0, i"
 }
 
 def getContent(cookies,ID):
     url = "https://www.ciweimao.com/chapter/get_chapter_list_in_chapter_detail"
+    headers = defaultHeaders
+    headers.update({})
+    headers.update({
+        "Referer": url})
     data = {
         "book_id": ID,
         "chapter_id": "0",
         "orderby": "0"
     }
-    headers.update({"Referer": url})
     response = requests.post(url, cookies=cookies,headers=headers,data=data)
     return extract_chapter_info(response.text)
 
@@ -35,9 +43,10 @@ def extract_chapter_info(text):
     return chapters
 
 def getName(cookies,url):
-    headers.update({"Referer": url})
+    headers = defaultHeaders
+    headers.update({
+        "Referer": url})
     response = requests.get(url, cookies=cookies,headers=headers)
-    print(response.status_code)
     if(response.status_code != 200):
         return False
     return extract_name_and_cover(response.text)
@@ -60,19 +69,25 @@ def extract_name_and_cover(text):
 
 def getChapter(cookies,ID):
     url = f"https://www.ciweimao.com/chapter/{ID}"
-    headers.update({"Referer": url})
-    
+    headers = defaultHeaders
+    headers.update({
+        "Referer": url})
+
     accessKeyUrl = "https://www.ciweimao.com/chapter/ajax_get_session_code"
+    accessKeyHeaders = headers
     accessKeyData = {
         "chapter_id": ID
     }
-    accessKeyResponse = requests.post(accessKeyUrl,data=accessKeyData,cookies=cookies,headers=headers)
+    accessKeyResponse = requests.post(accessKeyUrl,data=accessKeyData,cookies=cookies,headers=accessKeyHeaders)
     accessKeyJson = json.loads(accessKeyResponse.text)
     accessKey = accessKeyJson.get("chapter_access_key")
-    
+
     chapterUrl = "https://www.ciweimao.com/chapter/get_book_chapter_detail_info"
-    chapterData = accessKeyData.update({"chapter_access_key": accessKey})
-    chapterResponse = requests.post(chapterUrl,data=chapterData,cookies=cookies,headers=headers)
+    chapterHeaders = headers
+    chapterData = accessKeyData
+    chapterData.update({"chapter_access_key": accessKey})
+    
+    chapterResponse = requests.post(chapterUrl,data=chapterData,cookies=cookies,headers=chapterHeaders)
     chapterJson = json.loads(chapterResponse.text)
     status = chapterJson.get("code")
     if(status != 100000):
