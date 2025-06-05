@@ -1,6 +1,6 @@
 from pathlib import Path
 
-def read_lines_if_exists(file_path):
+def read(file_path):
     path = Path(file_path)
     if not path.exists():
         print(f"文件不存在：{file_path}")
