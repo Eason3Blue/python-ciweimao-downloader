@@ -2,7 +2,6 @@ from bs4 import BeautifulSoup
 import requests
 import decrypt
 import json
-import time
 
 defaultHeaders = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 Edg/137.0.0.0",
@@ -96,7 +95,7 @@ def getChapter(cookies,ID):
         return chapterJson['tip']
     keys = chapterJson.get("encryt_keys")
     content = chapterJson.get("chapter_content")
-    return decrypt.decrypt(content,keys,accessKey)
+    return pureChapter(decrypt.decrypt(content,keys,accessKey))
 
 def pureChapter(text):
     soup = BeautifulSoup(text, 'html.parser')

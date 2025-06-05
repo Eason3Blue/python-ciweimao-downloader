@@ -69,3 +69,11 @@ if __name__ == "__main__":
             with open(dirPath / (str(count) + ".html"), "w", encoding="utf-8") as f:
                 f.write(chapterContent)
             count += 1
+        print("正在合并...")
+        for i in 1..count:
+            with open(dirPath / (str(count) + ".html"), "r", encoding="utf-8") as f:
+                chapter = f.read()
+            with open(dirPath / (bookName + ".html"), "w", encoding="utf-8") as f:
+                f.write(chapter)
+        print("合并完成")
+        input("回车退出程序...")
