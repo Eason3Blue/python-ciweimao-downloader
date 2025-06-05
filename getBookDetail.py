@@ -18,7 +18,6 @@ defaultHeaders = {
 def getContent(cookies,ID):
     url = "https://www.ciweimao.com/chapter/get_chapter_list_in_chapter_detail"
     headers = defaultHeaders
-    headers.update({})
     headers.update({
         "Referer": url})
     data = {
