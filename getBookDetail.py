@@ -43,7 +43,8 @@ def extract_chapter_info(text):
 
     return chapters
 
-def getName(cookies,url):
+def getName(cookies,ID):
+    url = f"https://www.ciweimao.com/book/{ID}"
     headers = defaultHeaders
     headers.update({
         "Referer": url})

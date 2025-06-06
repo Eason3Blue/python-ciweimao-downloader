@@ -49,7 +49,7 @@ if __name__ == "__main__":
             print("输入错误，请重新输入")
             continue  
     
-        bookAbout = getBookDetail.getName(accountCookies,bookURL)
+        bookAbout = getBookDetail.getName(accountCookies,bookID)
         if(bookAbout == False):
             print("书籍不存在或未通过审核")
             continue
