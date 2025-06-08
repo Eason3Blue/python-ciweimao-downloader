@@ -16,7 +16,7 @@ defaultHeaders = {
 
 def getContent(cookies,ID):
     url = "https://www.ciweimao.com/chapter/get_chapter_list_in_chapter_detail"
-    headers = defaultHeaders
+    headers = defaultHeaders.copy()
     headers.update({
         "Referer": url})
     data = {
@@ -39,13 +39,13 @@ def extract_chapter_info(text):
         # 检查是否为有效的章节链接
         # 通过识别链接中的 URL 模式来过滤非章节链接
         if text and url.startswith("https://www.ciweimao.com/chapter/"):
-            chapters.append((text, url.split("/")[-1]))
+            chapters.append((text, url))
 
     return chapters
 
 def getName(cookies,ID):
     url = f"https://www.ciweimao.com/book/{ID}"
-    headers = defaultHeaders
+    headers = defaultHeaders.copy()
     headers.update({
         "Referer": url})
     response = requests.get(url, cookies=cookies,headers=headers)
@@ -71,7 +71,7 @@ def extract_name_and_cover(text):
 
 def getChapter(cookies,ID):
     url = f"https://www.ciweimao.com/chapter/{ID}"
-    headers = defaultHeaders
+    headers = defaultHeaders.copy()
     headers.update({
         "Referer": url})
 
