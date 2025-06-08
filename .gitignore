@@ -140,3 +140,7 @@ cython_debug/
 accountCookies.json
 
 upx/
+
+.vscode/
+
+*.epub
