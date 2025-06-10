@@ -1,4 +1,5 @@
 import os
+import BuiltIn
 import mimetypes
 import requests
 import hashlib
@@ -39,7 +40,7 @@ class ClassChapter:
     id: int = field(default_factory=int)
     url: str = field(default_factory=str)
     name: str = field(default_factory=str)
-    accessKey: ClassAccess = field(default_factory=ClassAccess)
+    access: ClassAccess = field(default_factory=ClassAccess)
     content: ClassContent = field(default_factory=ClassContent)
 
 def create_session():
@@ -85,12 +86,12 @@ def process_html(html, book, base_path, session, image_cache):
     Path(base_path).mkdir(parents=True, exist_ok=True)
     soup = BeautifulSoup(html, 'lxml')
     for img in soup.find_all('img'):
-        src = img.get('src')
+        src = img.get('src') # type: ignore
         if not src:
             continue
         try:
             if src in image_cache:
-                img['src'] = image_cache[src]
+                img['src'] = image_cache[src] # type: ignore
                 continue
             img_data, filename = download_image(src, base_path, session)
             media_type, _ = mimetypes.guess_type(filename)
@@ -108,16 +109,21 @@ def process_html(html, book, base_path, session, image_cache):
             )
             book.add_item(image_item)
             new_src = f"images/{filename}"
-            img['src'] = new_src
+            img['src'] = new_src # type: ignore
             image_cache[src] = new_src
         except Exception as e:
             print(f"Skipping image {src}: {str(e)}")
-            img['src'] = f"FAILED:{src}"
+            img['src'] = f"FAILED:{src}" # type: ignore
     return str(soup)
 
-def create_epub(title, author, chapters, cover, base_path, output_path):
+def create_epub(originBook : BuiltIn.ClassBook, output_path):
     try:
-        Path(base_path).mkdir(parents=True, exist_ok=True)
+        title = originBook.name
+        author = originBook.author
+        chapters = originBook.chapters.copy()
+        cover = originBook.cover
+        base_path = output_path
+        
         Path(output_path).mkdir(parents=True, exist_ok=True)
         output_file = Path(output_path) / f"{title}.epub"
         Path(output_file.parent).mkdir(parents=True, exist_ok=True)
