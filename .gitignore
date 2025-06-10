@@ -144,3 +144,6 @@ upx/
 .vscode/
 
 *.epub
+
+chrome/
+chromedriver/
