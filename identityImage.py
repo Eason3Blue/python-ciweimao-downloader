@@ -62,13 +62,23 @@ def process_image_bytes_to_chapter(chapter : BuiltIn.ClassChapter, book : BuiltI
         with open(Path(chapter.content.imgPath),"wb") as f:
             f.write(chapter.content.img)
         
+        textBoxesJson = textJson = list()
         result = image_to_text(chapter)
         for res in result:
-            res.save_to_json(f"{book.id}/json")
-            res.save_to_img(f"{book.id}/ocrImg")
+            res.save_to_json(f"{book.path}/json")
+            res.save_to_img(f"{book.path}/ocrImg")
             textJson = res["rec_texts"]
-        for texts in textJson: # type: ignore
-            chapter.content.raw += texts+"\n"
+            textBoxesJson = res["rec_boxes"]
+        
+        i = 0
+        for texts in textJson:
+            textBoxes = textBoxesJson[i]
+            x = textBoxes[0]
+            if x > 50:
+                chapter.content.raw += "\n"+texts
+            else:
+                chapter.content.raw += texts
+            i += 1
     except Exception as e:
         chapter.content.raw = f"json 失败: {e}"
     return
