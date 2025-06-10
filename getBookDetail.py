@@ -1,116 +1,170 @@
-from bs4 import BeautifulSoup
 import requests
 import decrypt
-import json
+import identityImage
+import json,time
+import BuiltIn
+import getSession
 from dataclasses import dataclass,field
+from bs4 import BeautifulSoup
 
-defaultHeaders = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 Edg/137.0.0.0",
-    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-    "X-Requested-With": "XMLHttpRequest",
-    "Accept": "application/json, text/javascript, */*; q=0.01",
-    "Accept-Encoding": "gzip, deflate, br, zstd",
-    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-    "Origin": "https://www.ciweimao.com",
-    "Priority": "u=0, i"
-}
-@dataclass
-class ClassBook:
-    url: str = field(default_factory=str)
-    id: int = field(default_factory=int)
-    name: str = field(default_factory=str)
-    author: str = field(default_factory=str)
-    content: list = field(default_factory=list)
-    cover: bytes = field(default_factory=bytes)
-    status: bool = False
-@dataclass
-class ClassAccess:
-    url: str = "https://www.ciweimao.com/chapter/ajax_get_session_code"
-    data: dict = field(default_factory=dict)
-    resp: object = field(default_factory=object)
-    json: object = field(default_factory=object)
-    key: str = field(default_factory=str)
-@dataclass
-class ClassContent:
-    url: str = "https://www.ciweimao.com/chapter/get_book_chapter_detail_info"
-    data: dict = field(default_factory=dict)
-    resp: object = field(default_factory=object)
-    json: object = field(default_factory=object)
-    keys: dict = field(default_factory=dict)
-    raw: str = field(default_factory=str)
-    status: bool = False
-@dataclass
-class ClassChapter:
-    id: int = field(default_factory=int)
-    url: str = field(default_factory=str)
-    accessKey: ClassAccess = field(default_factory=ClassAccess)
-    content: ClassContent = field(default_factory=ClassContent)
-
-
-def getContent(cookies,book : ClassBook):
+def getContent(book : BuiltIn.ClassBook):
+    session = BuiltIn.session
+    
     url = "https://www.ciweimao.com/chapter/get_chapter_list_in_chapter_detail"
-    headers = defaultHeaders.copy()
+    
+    headers = BuiltIn.defaultHeaders.copy()
     headers.update({
         "Referer": url})
+    
     data = {
         "book_id": book.id,
         "chapter_id": "0",
         "orderby": "0"
     }
-    response = requests.post(url, cookies=cookies,headers=headers,data=data)
+    
+    response = session.post(url,headers=headers,data=data)
+
     soup = BeautifulSoup(response.text, "html.parser")
+    
+    for li in soup.select("ul.book-chapter-list li"):
+        a_tag = li.find("a", href=True)
+        if not a_tag:
+            continue
 
-    for a_tag in soup.find_all("a", href=True):
-        # 获取链接文本和链接地址
-        text = a_tag.get_text(strip=True)
-        url = a_tag["href"]
-
-        # 检查是否为有效的章节链接
-        # 通过识别链接中的 URL 模式来过滤非章节链接
-        if text and url.startswith("https://www.ciweimao.com/chapter/"):
-            book.content.append((text, url))
+        url = a_tag["href"] # type: ignore
+        # 提取章节文本，排除 <i> 图标标签
+        title = ''.join([str(x) for x in a_tag.contents if not getattr(x, 'name', None)]) # type: ignore
+        is_locked = a_tag.find("i", class_="icon-lock") is not None # type: ignore
+        if is_locked : isFree = False 
+        else: isFree = True
+        book.content.append(BuiltIn.ClassChapter(name=title,url=url,isFree=isFree)) # type: ignore
     return
 
-def getName(cookies,book : ClassBook):
-    headers = defaultHeaders.copy()
+def getName(book : BuiltIn.ClassBook):
+    session = BuiltIn.session
+    
+    headers = BuiltIn.defaultHeaders.copy()
     headers["Referer"] = book.url
-    response = requests.get(book.url, cookies=cookies,headers=headers)
+    
+    response = session.get(book.url,headers=headers)
     if(response.status_code != 200):
         book.status = False
         return
     soup = BeautifulSoup(response.text, "html.parser")
     
-    title = soup.find("meta", property="og:novel:book_name")["content"]
-    author = soup.find("meta", property="og:novel:author")["content"]
-    coverUrl = soup.find("meta", property="og:image")["content"]  
-    book.name = title
-    book.author = author  
-    book.cover= requests.get(coverUrl).content
+    title = soup.find("meta", property="og:novel:book_name")["content"] # type: ignore
+    author = soup.find("meta", property="og:novel:author")["content"] # type: ignore
+    coverUrl = soup.find("meta", property="og:image")["content"]   # type: ignore
+    book.name = title # type: ignore
+    book.author = author   # type: ignore
+    book.cover= requests.get(coverUrl).content # type: ignore
     return
 
-def getChapter(cookies,chapter : ClassChapter):
-    headers = defaultHeaders.copy()
+def getPaidChapter(chapter : BuiltIn.ClassChapter, book : BuiltIn.ClassBook):
+    #取得图片id
+    session = BuiltIn.session
+    
+    chapter.access.url = "https://www.ciweimao.com/chapter/ajax_get_image_session_code"
+    
+    headers = BuiltIn.defaultHeaders.copy()
+    headers["Referer"] = chapter.url
+    chapter.access.data = {}
+    
+    chapter.access.resp = session.post(
+        url = chapter.access.url,
+        headers = headers
+    )
+    chapter.access.json = json.loads(chapter.access.resp.text)
+    decrypt.decryptImgId(chapter.access)
+
+    #取得图片
+    chapter.content.url = "https://www.ciweimao.com/chapter/book_chapter_image"
+    chapter.content.data = {
+        "chapter_id": chapter.id,
+        "area_width": 1080,
+        "font": "undefined",
+        "font_size": 48,
+        "image_code": chapter.access.imgId,
+        "bg_color_name": "white",
+        "text_color_name": "white"
+    }
+    
+    chapter.content.resp = session.get(
+        url = chapter.content.url,
+        headers = headers,
+        params = chapter.content.data)
+    chapter.content.img = chapter.content.resp.content
+    
+    print("章节内容下载完成，正在OCR识别中...")
+    
+    #转存图片
+    from pathlib import Path
+    imgDirPath = Path(f"./{book.id}/img")
+    imgPath = f"./{book.id}/img/{chapter.countId}.jpg"
+    imgDirPath.mkdir(parents=True, exist_ok=True)
+    
+    with open(Path(imgPath),"wb") as f:
+        f.write(chapter.content.img)
+    
+    chapter.content.imgPath = imgPath
+    identityImage.process_image_bytes_to_chapter(chapter, book)
+    
+    print("正在检测是否有附加图片中...")
+    imgsUrl = "https://www.ciweimao.com/chapter/chapter_image_tsukkomi_list"
+    imgsData = {
+        "chapter_id": chapter.id,
+        "area_width": 871,
+        "font_size":48
+    }
+    chapter.content.imgsJson = json.loads(session.post(url = imgsUrl, headers = headers, data = imgsData).text)
+    paths = []
+    def find_paths(obj):
+        if isinstance(obj, dict):
+            if 'path' in obj:
+                paths.append(obj['path'])
+            for value in obj.values():
+                find_paths(value)
+        elif isinstance(obj, (list, tuple)):
+            for item in obj:
+                find_paths(item)
+    find_paths(chapter.content.imgsJson["imageInfoMaps"]) # type: ignore
+    for url in paths:
+        chapter.content.imgs.append(url)
+    return
+
+def getChapter(chapter : BuiltIn.ClassChapter):
+    #获得AccessKey
+    session = BuiltIn.session
+    
+    headers = BuiltIn.defaultHeaders.copy()
     headers["Referer"] = chapter.url
 
-    chapter.accessKey.data = {
+    chapter.access.data = {
         "chapter_id": chapter.id
     }
-    chapter.accessKey.key = json.loads(requests.post(chapter.accessKey.url,data=chapter.accessKey.data,cookies=cookies,headers=headers).text).get("chapter_access_key")
+    
+    chapter.access.key = json.loads(session.post(
+        url=chapter.access.url,
+        data=chapter.access.data,
+        headers=headers).text).get("chapter_access_key")
 
-    chapter.content.data = chapter.accessKey.data.copy()
-    chapter.content.data["chapter_access_key"] = chapter.accessKey.key
-    chapter.content.json = json.loads(requests.post(
-        chapter.content.url,
+    #获得章节内容
+    chapter.content.data = chapter.access.data.copy()
+    chapter.content.data["chapter_access_key"] = chapter.access.key
+    chapter.content.json = json.loads(session.post(
+        url=chapter.content.url,
         data=chapter.content.data,
-        cookies=cookies,
         headers=headers).text)
-    chapter.content.status = chapter.content.json["code"]
-    if(chapter.content.status != 1e5):
-        return chapter.content.json["tip"]
-    chapter.content.raw = pureChapter(decrypt.decrypt(
-        chapter.content.json["chapter_content"],
-        chapter.content.json["encryt_keys"],
-        chapter.accessKey.key))
+    chapter.content.status = chapter.content.json["code"] # type: ignore
+    
+    if(chapter.content.status == 400001):
+        print(chapter.content.json["tip"]) # type: ignore
+        chapter.content.raw = chapter.content.json["tip"] # type: ignore
+        return
+    chapter.content.raw = pureChapter(decrypt.decryptFree(
+        chapter.content.json["chapter_content"], # type: ignore
+        chapter.content.json["encryt_keys"], # type: ignore
+        chapter.access.key))
     return
 
 def pureChapter(text):
