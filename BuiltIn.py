@@ -39,6 +39,7 @@ class ClassBook:
     content: list = field(default_factory=list)
     chapters: list = field(default_factory=list)
     cover: bytes = field(default_factory=bytes)
+    path: str = field(default_factory=str)
     status: bool = True
 
 defaultHeaders = {

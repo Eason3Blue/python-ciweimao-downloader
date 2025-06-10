@@ -1,4 +1,5 @@
 import getLogin
+import autoDownloadChrome
 import makeEpub
 import BuiltIn
 import getSession
@@ -11,6 +12,12 @@ from dataclasses import dataclass, field
 expireTime = 0
 
 if __name__ == "__main__":
+    chromePath = Path("./chrome\\chrome.exe")
+    chromeDriverPath = Path('./chromedriver\\chromedriver.exe')
+    if chromePath.exists() == False or chromeDriverPath.exists() == False :
+        print("未下载chrome，正在下载中...")
+        autoDownloadChrome.main()
+    
     #读取缓存
     path = Path('./accountCookies.json')
     if not path.exists():
@@ -57,13 +64,12 @@ if __name__ == "__main__":
             print("书籍不存在或未通过审核，或者刺猬猫服务器宕机")
             continue
         print(f"bookName: {book.name}")
+        book.path = f"./book/{str(book.id)}"
+        Path(book.path).mkdir(parents=True, exist_ok=True)
         
-        #创建书本目录，放置书本封面
-        dirPath = Path(str(book.id))
-        dirPath.mkdir(parents=True, exist_ok=True)
-        coverImg = book.cover
-        with open(dirPath / "cover.jpg", "wb") as f:
-            f.write(coverImg)
+        #放置书本封面
+        with open(Path(book.path) / "cover.jpg", "wb") as f:
+            f.write(book.cover)
         
         #获得书本目录
         getBookDetail.getContent(book)
@@ -74,7 +80,7 @@ if __name__ == "__main__":
             #定义单章节
             chapter.id = chapter.url.split("/")[-1]
             chapter.countId = count
-            path = Path(dirPath / f"{str(count)} {chapter.name}.html")
+            path = Path(Path(book.path) / f"{str(count)} {chapter.name}.html")
             
             if not path.exists():
                 print(f"进行第{count}章下载，标题:{chapter.name}")
@@ -100,6 +106,6 @@ if __name__ == "__main__":
             
             book.chapters.append(chapter)
             count += 1
-        makeEpub.create_epub(book, f"./{book.id}/epub")
+        makeEpub.create_epub(book, f"{book.path}/epub")
         print("合并完成")
         input("回车进入下一轮下载..")
