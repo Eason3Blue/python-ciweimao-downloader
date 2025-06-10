@@ -1,32 +1,39 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 import time
+import BuiltIn
 
 def getLogin():
+    chrome_driver_path = "chromedriver\\chromedriver.exe"
+    chrome_binary_path = "chrome\\chrome.exe"  # 指定浏览器路径
     options = Options()
     options.add_argument("--start-maximized")
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+    options.binary_location = chrome_binary_path
+
+    service = Service(executable_path=chrome_driver_path)
+    driver = webdriver.Chrome(service=service, options=options)
+
     driver.get("https://www.ciweimao.com/signup/login")
-    input("请登录后按回车")
+    input("登录成功后，按回车继续...")
+    
     cookies = driver.get_cookies()
     driver.quit()
     
+    accountSession = accountLoginToken = accountReaderID = accountUserID = ""
+    
     for cookie in cookies:
-        if cookie['name'] == 'ci_session':
-            accountSession = cookie['value']
-        elif cookie['name'] == 'login_token':
+        if cookie['name'] == 'login_token':
             accountLoginToken = cookie['value']
         elif cookie['name'] == 'user_id':
             accountUserID = cookie['value']
         elif cookie['name'] == 'reader_id':
                 accountReaderID = cookie['value']
-    cookies = {
-        "ci_session" : accountSession,
+    BuiltIn.accountCookies = {
         "login_token": accountLoginToken,
         "user_id"    : accountUserID,
         "reader_id"  : accountReaderID,
-        "expireTime" : str(time.time() + 7200)
+        "expireTime" : str(time.time() + 604800)
     }
-    return cookies
+    return
