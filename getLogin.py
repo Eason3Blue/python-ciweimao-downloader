@@ -30,7 +30,10 @@ def getLogin():
             accountUserID = cookie['value']
         elif cookie['name'] == 'reader_id':
                 accountReaderID = cookie['value']
+        elif cookie['name'] == 'ci_session':
+                accountSession = cookie['value']
     BuiltIn.accountCookies = {
+        "ci_session": accountSession,
         "login_token": accountLoginToken,
         "user_id"    : accountUserID,
         "reader_id"  : accountReaderID,

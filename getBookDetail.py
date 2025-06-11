@@ -8,7 +8,6 @@ from dataclasses import dataclass,field
 from bs4 import BeautifulSoup
 
 def getContent(book : BuiltIn.ClassBook):
-    session = BuiltIn.session
     
     url = "https://www.ciweimao.com/chapter/get_chapter_list_in_chapter_detail"
     
@@ -22,7 +21,7 @@ def getContent(book : BuiltIn.ClassBook):
         "orderby": "0"
     }
     
-    response = session.post(url,headers=headers,data=data)
+    response = requests.post(url,headers=headers,data=data)
 
     soup = BeautifulSoup(response.text, "html.parser")
     

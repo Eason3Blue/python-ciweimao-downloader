@@ -45,6 +45,9 @@ if __name__ == "__main__":
     BuiltIn.session.cookies = requests.utils.cookiejar_from_dict(BuiltIn.accountCookies)
     getSession.getSession(BuiltIn.session)
     
+    with open(path, "w", encoding='utf-8') as f: #写入缓存
+        f.write(json.dumps(BuiltIn.accountCookies))
+    
     #告知用户
     print(f"login_token = {BuiltIn.accountCookies['login_token']}\n",
           f"user_id     = {BuiltIn.accountCookies['user_id']}\n",
@@ -89,7 +92,7 @@ if __name__ == "__main__":
                 headers["Referer"] = chapter.url
                 BuiltIn.session.get(url=chapter.url,headers=headers)
                 
-                if chapter.isFree:
+                if chapter.isFree == True:
                     getBookDetail.getChapter(chapter)
                 else:
                     getBookDetail.getPaidChapter(chapter,book)

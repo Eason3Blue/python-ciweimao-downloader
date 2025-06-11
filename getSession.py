@@ -11,5 +11,6 @@ def getSession(session : requests.Session):
     resp = session.get(url=url,headers=headers)
     respHeader = resp.headers.get('Set-Cookie', '')
     match = re.search(r'ci_session=([^;]+)', respHeader)
-    session.cookies.update(requests.utils.cookiejar_from_dict({"ci_session": match.group(1)})) # type: ignore
+    if match:
+        session.cookies.update(requests.utils.cookiejar_from_dict({"ci_session": match.group(1)})) # type: ignore
     return
