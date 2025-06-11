@@ -1,7 +1,5 @@
 # PythonCiweimaoDownloader
 
-#### 此readme已经过时，有待更新	
-
 #### 介绍
 使用python编写的针对刺猬猫的下载程序，可以轻而易举地登录，自动识别付费章节，自动调用ocr模型识别文字，下载小说并自动压入epub
 
