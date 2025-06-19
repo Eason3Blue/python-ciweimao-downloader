@@ -1,0 +1,15 @@
+paddlepaddle
+paddlex
+paddleocr
+
+requests
+tqdm
+selenium
+pycryptodome
+urllib3
+numpy
+opencv-python
+opencv-contrib-python
+pillow
+bs4
+ebooklib

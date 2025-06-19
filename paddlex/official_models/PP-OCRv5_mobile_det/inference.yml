@@ -25,8 +25,7 @@ PreProcess:
       channel_first: false
       img_mode: BGR
   - DetLabelEncode: null
-  - DetResizeForTest:
-      resize_long: 960
+  - DetResizeForTest: null
   - NormalizeImage:
       mean:
       - 0.485

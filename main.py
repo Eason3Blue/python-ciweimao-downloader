@@ -69,6 +69,8 @@ if __name__ == "__main__":
         print(f"bookName: {book.name}")
         book.path = f"./book/{str(book.id)}"
         Path(book.path).mkdir(parents=True, exist_ok=True)
+        Path(f"{book.path}/img").mkdir(parents=True, exist_ok=True)
+        Path(f"{book.path}/img/sliced").mkdir(parents=True, exist_ok=True)
         
         #放置书本封面
         with open(Path(book.path) / "cover.jpg", "wb") as f:

@@ -17,32 +17,6 @@ ALLOWED_IMAGE_TYPES = {
     'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'
 }
 
-@dataclass
-class ClassAccess:
-    url: str = "https://www.ciweimao.com/chapter/ajax_get_session_code"
-    data: dict = field(default_factory=dict)
-    resp: object = field(default_factory=object)
-    json: object = field(default_factory=object)
-    key: str = field(default_factory=str)
-
-@dataclass
-class ClassContent:
-    url: str = "https://www.ciweimao.com/chapter/get_book_chapter_detail_info"
-    data: dict = field(default_factory=dict)
-    resp: object = field(default_factory=object)
-    json: object = field(default_factory=object)
-    keys: dict = field(default_factory=dict)
-    raw: str = field(default_factory=str)
-    status: bool = False
-
-@dataclass
-class ClassChapter:
-    id: int = field(default_factory=int)
-    url: str = field(default_factory=str)
-    name: str = field(default_factory=str)
-    access: ClassAccess = field(default_factory=ClassAccess)
-    content: ClassContent = field(default_factory=ClassContent)
-
 def create_session():
     session = requests.Session()
     retry = Retry(

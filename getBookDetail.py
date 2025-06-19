@@ -98,8 +98,10 @@ def getPaidChapter(chapter : BuiltIn.ClassChapter, book : BuiltIn.ClassBook):
     
     #转存图片
     from pathlib import Path
-    imgDirPath = Path(f"{book.path}/img")
+    imgDir = f"{book.path}/img"
+    imgDirPath = Path(imgDir)
     imgDirPath.mkdir(parents=True, exist_ok=True)
+    chapter.content.imgDir = imgDir
     imgPath = f"{book.path}/img/{chapter.countId}.jpg"
     
     with open(Path(imgPath),"wb") as f:

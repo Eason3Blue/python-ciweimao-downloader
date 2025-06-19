@@ -18,6 +18,7 @@ class ClassContent:
     raw: str = field(default_factory=str)
     img: bytes = field(default_factory=bytes)
     imgPath: str = field(default_factory=str)
+    imgDir: str = field(default_factory=str)
     imgsJson: object = field(default_factory=object)
     imgs: list = field(default_factory=list)
     status: bool = True
@@ -43,7 +44,7 @@ class ClassBook:
     status: bool = True
 
 defaultHeaders = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0",
     "Accept": "*/*",
     "Accept-Encoding": "gzip, deflate, br",
     "Accept-Language": "zh-CN,zh;q=0.9"
