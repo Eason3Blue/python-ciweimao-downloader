@@ -1,6 +1,5 @@
 import requests
 import decrypt
-import identityImage
 import json,time
 import BuiltIn
 import getSession
@@ -59,7 +58,7 @@ def getName(book : BuiltIn.ClassBook):
     book.cover= requests.get(coverUrl).content # type: ignore
     return
 
-def getPaidChapter(chapter : BuiltIn.ClassChapter, book : BuiltIn.ClassBook):
+def getPaidChapter(chapter : BuiltIn.ClassChapter, book : BuiltIn.ClassBook, device : BuiltIn.ClassDeviceInfo):
     #取得图片id
     session = BuiltIn.session
     
@@ -80,9 +79,9 @@ def getPaidChapter(chapter : BuiltIn.ClassChapter, book : BuiltIn.ClassBook):
     chapter.content.url = "https://www.ciweimao.com/chapter/book_chapter_image"
     chapter.content.data = {
         "chapter_id": chapter.id,
-        "area_width": 1080,
+        "area_width": device.weight,
         "font": "undefined",
-        "font_size": 48,
+        "font_size": device.point,
         "image_code": chapter.access.imgId,
         "bg_color_name": "white",
         "text_color_name": "white"
@@ -108,29 +107,8 @@ def getPaidChapter(chapter : BuiltIn.ClassChapter, book : BuiltIn.ClassBook):
         f.write(chapter.content.img)
     
     chapter.content.imgPath = imgPath
-    identityImage.process_image_bytes_to_chapter(chapter, book)
-    
-    print("正在检测是否有附加图片中...")
-    imgsUrl = "https://www.ciweimao.com/chapter/chapter_image_tsukkomi_list"
-    imgsData = {
-        "chapter_id": chapter.id,
-        "area_width": 871,
-        "font_size":48
-    }
-    chapter.content.imgsJson = json.loads(session.post(url = imgsUrl, headers = headers, data = imgsData).text)
-    paths = []
-    def find_paths(obj):
-        if isinstance(obj, dict):
-            if 'path' in obj:
-                paths.append(obj['path'])
-            for value in obj.values():
-                find_paths(value)
-        elif isinstance(obj, (list, tuple)):
-            for item in obj:
-                find_paths(item)
-    find_paths(chapter.content.imgsJson["imageInfoMaps"]) # type: ignore
-    for url in paths:
-        chapter.content.imgs.append(url)
+
+    chapter.content.raw = f"<a href='{chapter.content.imgPath}'></a>"
     return
 
 def getChapter(chapter : BuiltIn.ClassChapter):

@@ -42,6 +42,11 @@ class ClassBook:
     cover: bytes = field(default_factory=bytes)
     path: str = field(default_factory=str)
     status: bool = True
+@dataclass
+class ClassDeviceInfo:
+    height: int = field(default_factory=int)
+    weight: int = field(default_factory=int)
+    point: int = field(default_factory=int)
 
 defaultHeaders = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0",

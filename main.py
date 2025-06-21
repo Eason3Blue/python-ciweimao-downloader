@@ -7,7 +7,6 @@ import requests
 import getBookDetail
 from pathlib import Path
 import json, time
-from dataclasses import dataclass, field
 
 expireTime = 0
 
@@ -18,7 +17,7 @@ if __name__ == "__main__":
         print("未下载chrome，正在下载中...")
         autoDownloadChrome.main()
     
-    #读取缓存
+    #读取Cookies缓存
     path = Path('./accountCookies.json')
     if not path.exists():
         print(f"文件不存在：{path}")
@@ -49,9 +48,53 @@ if __name__ == "__main__":
         f.write(json.dumps(BuiltIn.accountCookies))
     
     #告知用户
+    print("")
     print(f"login_token = {BuiltIn.accountCookies['login_token']}\n",
           f"user_id     = {BuiltIn.accountCookies['user_id']}\n",
           f"reader_id   = {BuiltIn.accountCookies['reader_id']}")
+    
+    DeviceInfo = BuiltIn.ClassDeviceInfo()
+    #读取设备缓存
+    path = Path('./ClassDeviceInfo.json')
+    if not path.exists():
+        print(f"文件不存在：{path}")
+        cacheReadResponse = False
+    else:
+        with open(path, "r", encoding='utf-8') as f:
+            cacheReadResponse = f.read()
+            responJson = json.loads(cacheReadResponse)
+            expireTime     = float(BuiltIn.accountCookies["expireTime"])
+            DeviceInfo.height = responJson["height"]
+            DeviceInfo.weight = responJson["weight"]
+            DeviceInfo.point = responJson["point"]
+    
+    #没有缓存
+    print("现在输入你的设备信息")
+    needCache = height = weight = point = "wdf"
+    while(isinstance(height,int) == False):
+        height = input("     长：")
+    while(isinstance(weight,int) == False):
+        weight = input("     宽：")
+    while(isinstance(point,int) == False):
+        point = input("     字号：")
+    while(needCache not in ['y','n']):
+        point = input("     是否要保存以上信息（y/n）：")
+    
+    DeviceInfo.height = int(height)
+    DeviceInfo.weight = int(weight)
+    DeviceInfo.point = int(point)
+    
+    if(needCache == 'y'):
+        path = Path('./ClassDeviceInfo.json')
+        with open(path, "r", encoding='utf-8') as f:
+            f.write(json.dumps(DeviceInfo))
+    
+    #告知用户
+    print("")
+    print(f"长  = {DeviceInfo.height}\n",
+          f"宽  = {DeviceInfo.weight}\n",
+          f"字号 = {DeviceInfo.point}")
+    
     
     book = BuiltIn.ClassBook()
     while(True): #下载流程
@@ -64,7 +107,7 @@ if __name__ == "__main__":
             continue  
         getBookDetail.getName(book)
         if(book.status == False):
-            print("书籍不存在或未通过审核，或者刺猬猫服务器宕机")
+            print("书籍不存在或未通过审核，或者刺猬猫服务器宕机（有时真的会发生）")
             continue
         print(f"bookName: {book.name}")
         book.path = f"./book/{str(book.id)}"
@@ -97,9 +140,7 @@ if __name__ == "__main__":
                 if chapter.isFree == True:
                     getBookDetail.getChapter(chapter)
                 else:
-                    getBookDetail.getPaidChapter(chapter,book)
-                    for url in chapter.content.imgs:
-                        chapter.content.raw += f"<a href='{url}'></a>"
+                    getBookDetail.getPaidChapter(chapter,book,DeviceInfo)
                 print("下载完成")
                 
                 with open(path, "w", encoding="utf-8") as f:

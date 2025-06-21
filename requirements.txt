@@ -1,7 +1,3 @@
-paddlepaddle
-paddlex
-paddleocr
-
 requests
 tqdm
 selenium
