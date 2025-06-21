@@ -1,9 +1,8 @@
 import requests
 import decrypt
-import json,time
+import json
+import doImage
 import BuiltIn
-import getSession
-from dataclasses import dataclass,field
 from bs4 import BeautifulSoup
 
 def getContent(book : BuiltIn.ClassBook):
@@ -58,7 +57,7 @@ def getName(book : BuiltIn.ClassBook):
     book.cover= requests.get(coverUrl).content # type: ignore
     return
 
-def getPaidChapter(chapter : BuiltIn.ClassChapter, book : BuiltIn.ClassBook, device : BuiltIn.ClassDeviceInfo):
+def getPaidChapter(chapter : BuiltIn.ClassChapter, book : BuiltIn.ClassBook, device : dict):
     #取得图片id
     session = BuiltIn.session
     
@@ -79,9 +78,9 @@ def getPaidChapter(chapter : BuiltIn.ClassChapter, book : BuiltIn.ClassBook, dev
     chapter.content.url = "https://www.ciweimao.com/chapter/book_chapter_image"
     chapter.content.data = {
         "chapter_id": chapter.id,
-        "area_width": device.weight,
+        "area_width": device['weight'],
         "font": "undefined",
-        "font_size": device.point,
+        "font_size": device['point'],
         "image_code": chapter.access.imgId,
         "bg_color_name": "white",
         "text_color_name": "white"
@@ -91,24 +90,23 @@ def getPaidChapter(chapter : BuiltIn.ClassChapter, book : BuiltIn.ClassBook, dev
         url = chapter.content.url,
         headers = headers,
         params = chapter.content.data)
-    chapter.content.img = chapter.content.resp.content
-    
-    print("章节内容下载完成，正在OCR识别中...")
-    
+    doImage.slice_image_fast(chapter.content.img, chapter, device['height'])
     #转存图片
-    from pathlib import Path
-    imgDir = f"{book.path}/img"
-    imgDirPath = Path(imgDir)
-    imgDirPath.mkdir(parents=True, exist_ok=True)
-    chapter.content.imgDir = imgDir
-    imgPath = f"{book.path}/img/{chapter.countId}.jpg"
+    # from pathlib import Path
+    # imgDir = f"{book.path}/img"
+    # imgDirPath = Path(imgDir)
+    # imgDirPath.mkdir(parents=True, exist_ok=True)
+    # chapter.content.imgDir = imgDir
+    # imgPath = f"{book.path}/img/{chapter.countId}.jpg"
     
-    with open(Path(imgPath),"wb") as f:
-        f.write(chapter.content.img)
+    # with open(Path(imgPath),"wb") as f:
+    #     f.write(chapter.content.img)
     
-    chapter.content.imgPath = imgPath
+    # chapter.content.imgPath = imgPath
 
-    chapter.content.raw = f"<a href='{chapter.content.imgPath}'></a>"
+    # chapter.content.raw = f"<img href='{chapter.content.imgPath}'></img>"
+    # chapter.raw = chapter.content.raw
+    
     return
 
 def getChapter(chapter : BuiltIn.ClassChapter):
@@ -144,6 +142,7 @@ def getChapter(chapter : BuiltIn.ClassChapter):
         chapter.content.json["chapter_content"], # type: ignore
         chapter.content.json["encryt_keys"], # type: ignore
         chapter.access.key))
+    chapter.raw = chapter.content.raw
     return
 
 def pureChapter(text):

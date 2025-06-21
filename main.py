@@ -8,7 +8,7 @@ import getBookDetail
 from pathlib import Path
 import json, time
 
-expireTime = 0
+expireTime = 2147483647
 
 if __name__ == "__main__":
     chromePath = Path("./chrome\\chrome.exe")
@@ -19,22 +19,16 @@ if __name__ == "__main__":
     
     #读取Cookies缓存
     path = Path('./accountCookies.json')
-    if not path.exists():
-        print(f"文件不存在：{path}")
-        cacheReadResponse = False
-    else:
+    try:
         with open(path, "r", encoding='utf-8') as f:
             cacheReadResponse = f.read()
-    
-    if(cacheReadResponse != False): #若缓存存在
         BuiltIn.accountCookies = json.loads(cacheReadResponse)
         expireTime     = float(BuiltIn.accountCookies["expireTime"])
-    
-    if(cacheReadResponse == False): #若缓存不存在
+    except:
         print("未检测到缓存，正在登录...")
         getLogin.getLogin()
     
-    elif(time.time() >= expireTime): #若token超时
+    if(time.time() >= expireTime): #若token超时
         print("登录信息超时，正在重新登录...")
         getLogin.getLogin()
     
@@ -53,47 +47,43 @@ if __name__ == "__main__":
           f"user_id     = {BuiltIn.accountCookies['user_id']}\n",
           f"reader_id   = {BuiltIn.accountCookies['reader_id']}")
     
-    DeviceInfo = BuiltIn.ClassDeviceInfo()
     #读取设备缓存
-    path = Path('./ClassDeviceInfo.json')
-    if not path.exists():
-        print(f"文件不存在：{path}")
-        cacheReadResponse = False
-    else:
+    path = Path('./deviceInfo.json')
+    try:
         with open(path, "r", encoding='utf-8') as f:
             cacheReadResponse = f.read()
             responJson = json.loads(cacheReadResponse)
-            expireTime     = float(BuiltIn.accountCookies["expireTime"])
-            DeviceInfo.height = responJson["height"]
-            DeviceInfo.weight = responJson["weight"]
-            DeviceInfo.point = responJson["point"]
-    
-    #没有缓存
-    print("现在输入你的设备信息")
-    needCache = height = weight = point = "wdf"
-    while(isinstance(height,int) == False):
-        height = input("     长：")
-    while(isinstance(weight,int) == False):
-        weight = input("     宽：")
-    while(isinstance(point,int) == False):
-        point = input("     字号：")
-    while(needCache not in ['y','n']):
-        point = input("     是否要保存以上信息（y/n）：")
-    
-    DeviceInfo.height = int(height)
-    DeviceInfo.weight = int(weight)
-    DeviceInfo.point = int(point)
-    
-    if(needCache == 'y'):
-        path = Path('./ClassDeviceInfo.json')
-        with open(path, "r", encoding='utf-8') as f:
-            f.write(json.dumps(DeviceInfo))
-    
+            BuiltIn.deviceInfo = responJson
+    except:
+        print(f"文件不存在：{path}")
+        #没有缓存
+        while(True):
+            print("现在输入你的设备信息")
+            needCache = height = weight = point = "wdf"
+            
+            height = int(input("     长："))
+            weight = int(input("     宽："))
+            point = int(input("     字号："))
+            needCache = str(input("     是否要保存以上信息（y/其他）："))
+            
+            if (isinstance(height,int) and isinstance(weight,int) and isinstance(point,int) and isinstance(needCache,str)):
+                break
+            else:
+                print("输入无效")
+        
+        BuiltIn.deviceInfo['height'] = height
+        BuiltIn.deviceInfo['weight'] = weight
+        BuiltIn.deviceInfo['point'] = point
+        if(needCache == 'y'):
+            path = Path('./deviceInfo.json')
+            with open(path, "w", encoding='utf-8') as f:
+                f.write(json.dumps(BuiltIn.deviceInfo))
+                    
     #告知用户
     print("")
-    print(f"长  = {DeviceInfo.height}\n",
-          f"宽  = {DeviceInfo.weight}\n",
-          f"字号 = {DeviceInfo.point}")
+    print(f"长  = {BuiltIn.deviceInfo['height']}\n",
+          f"宽  = {BuiltIn.deviceInfo['weight']}\n",
+          f"字号 = {BuiltIn.deviceInfo['point']}")
     
     
     book = BuiltIn.ClassBook()
@@ -114,6 +104,7 @@ if __name__ == "__main__":
         Path(book.path).mkdir(parents=True, exist_ok=True)
         Path(f"{book.path}/img").mkdir(parents=True, exist_ok=True)
         Path(f"{book.path}/img/sliced").mkdir(parents=True, exist_ok=True)
+        Path(f"{book.path}/epub").mkdir(parents=True, exist_ok=True)
         
         #放置书本封面
         with open(Path(book.path) / "cover.jpg", "wb") as f:
@@ -140,18 +131,25 @@ if __name__ == "__main__":
                 if chapter.isFree == True:
                     getBookDetail.getChapter(chapter)
                 else:
-                    getBookDetail.getPaidChapter(chapter,book,DeviceInfo)
+                    getBookDetail.getPaidChapter(chapter,book,BuiltIn.deviceInfo)
                 print("下载完成")
                 
                 with open(path, "w", encoding="utf-8") as f:
                     f.write(chapter.content.raw)
             else: #读取已下载章节
                 print(f"第{count}章已经下载，跳过")
-                with open(path, "r", encoding="utf-8") as f:
-                    chapter.content.raw = f.read()
-            
+                if chapter.isFree == True:
+                    with open(path, "r", encoding="utf-8") as f:
+                        chapter.content.raw = f.read()
+                    chapter.raw = chapter.content.raw
+                else:
+                    folder = Path(f"{book.id}/img/sliced/{count}/")
+                    for file in folder.iterdir():
+                        if file.is_file():
+                            with open(file, "rb"):
+                                chapter.img.append(file)
             book.chapters.append(chapter)
             count += 1
-        makeEpub.create_epub(book, f"{book.path}/epub")
+        makeEpub.generate_epub(book, f"{book.path}/epub/{book.name}.epub")
         print("合并完成")
         input("回车进入下一轮下载..")

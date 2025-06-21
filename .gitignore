@@ -149,3 +149,4 @@ chrome/
 chromedriver/
 book/
 nutika.ps1
+deviceInfo.json

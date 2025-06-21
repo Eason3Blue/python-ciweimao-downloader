@@ -1,144 +1,144 @@
 import os
-import BuiltIn
-import mimetypes
+import uuid
 import requests
-import hashlib
-from pathlib import Path
-from dataclasses import dataclass, field
-from concurrent.futures import ThreadPoolExecutor
+import BuiltIn
 from bs4 import BeautifulSoup
 from ebooklib import epub
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning)
+from urllib.parse import urlparse
 
-ALLOWED_IMAGE_TYPES = {
-    'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'
-}
+def clean_html_with_images(raw_html: str, img_dir="images"):
+    soup = BeautifulSoup(raw_html, 'html.parser')
 
-def create_session():
-    session = requests.Session()
-    retry = Retry(
-        total=3,
-        backoff_factor=0.5,
-        status_forcelist=[500, 502, 503, 504]
-    )
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount('http://', adapter)
-    session.mount('https://', adapter)
-    session.headers.update({"User-Agent": "Mozilla/5.0 (EPUBBot/1.0)"})
-    return session
+    for span in soup.find_all('span'):
+        span.decompose()
 
-def safe_filename(content, original_name):
-    ext = os.path.splitext(original_name)[1] or '.jpg'
-    name_hash = hashlib.md5(content).hexdigest()[:8]
-    return f"{name_hash}{ext}"
+    image_items = []
+    image_html_blocks = []
 
-def download_image(img_src, base_path, session=None):
-    try:
-        session = session or create_session()
-        Path(base_path).mkdir(parents=True, exist_ok=True)
-        if img_src.startswith(('http://', 'https://')):
-            response = session.get(img_src, timeout=10)
-            response.raise_for_status()
-            return response.content, safe_filename(response.content, os.path.basename(img_src))
-        else:
-            full_path = (Path(base_path) / img_src).resolve()
-            Path(full_path.parent).mkdir(parents=True, exist_ok=True)
-            try:
-                full_path.relative_to(Path(base_path).resolve())
-            except ValueError:
-                raise ValueError(f"Attempted to access restricted path: {full_path}")
-            content = full_path.read_bytes()
-            return content, safe_filename(content, full_path.name)
-    except Exception as e:
-        print(f"Failed to download {img_src}: {str(e)}")
-        raise
-
-def process_html(html, book, base_path, session, image_cache):
-    Path(base_path).mkdir(parents=True, exist_ok=True)
-    soup = BeautifulSoup(html, 'lxml')
-    for img in soup.find_all('img'):
-        src = img.get('src') # type: ignore
+    for img_tag in soup.find_all('img'):
+        src = img_tag.get('src') # type: ignore
         if not src:
             continue
+
+        parsed = urlparse(src) # type: ignore
+        filename = str(uuid.uuid4()) + os.path.splitext(parsed.path)[-1]
+        epub_path = f"{img_dir}/{filename}"  # ✅ 正斜杠，适用于 HTML
+
         try:
-            if src in image_cache:
-                img['src'] = image_cache[src] # type: ignore
-                continue
-            img_data, filename = download_image(src, base_path, session)
-            media_type, _ = mimetypes.guess_type(filename)
-            if not media_type:
-                media_type = 'image/jpeg'
-            if media_type not in ALLOWED_IMAGE_TYPES:
-                raise ValueError(f"Unsupported image type: {media_type}")
-            img_id = f"img_{hashlib.md5(img_data).hexdigest()[:8]}"
-            Path(base_path, "images").mkdir(parents=True, exist_ok=True)
-            image_item = epub.EpubItem(
-                uid=img_id,
-                file_name=f"images/{filename}",
-                media_type=media_type,
-                content=img_data
-            )
-            book.add_item(image_item)
-            new_src = f"images/{filename}"
-            img['src'] = new_src # type: ignore
-            image_cache[src] = new_src
+            if parsed.scheme in ('http', 'https'):
+                response = requests.get(src) # type: ignore
+                if response.status_code == 200:
+                    image_data = response.content
+                else:
+                    continue
+            else:
+                with open(src, 'rb') as f: # type: ignore
+                    image_data = f.read()
+
+            img_item = epub.EpubItem(uid=filename,
+                                     file_name=epub_path,
+                                     media_type=f'image/{filename.split(".")[-1]}',
+                                     content=image_data)
+            image_items.append(img_item)
+            image_html_blocks.append(f'<div><img src="{epub_path}" /></div>')
+
         except Exception as e:
-            print(f"Skipping image {src}: {str(e)}")
-            img['src'] = f"FAILED:{src}" # type: ignore
-    return str(soup)
+            print(f"[WARN] 图像 {src} 处理失败: {e}")
+            continue
 
-def create_epub(originBook : BuiltIn.ClassBook, output_path):
+        img_tag.decompose()
+
+    cleaned_paragraphs = [str(p.get_text()) for p in soup.find_all('p')]
+    cleaned_text = '<br/>'.join(cleaned_paragraphs)
+    full_html = f"<div>{cleaned_text}</div>" + ''.join(image_html_blocks)
+
+    return full_html, image_items
+
+
+def generate_epub(book: BuiltIn.ClassBook, output_path: str):
+    epub_book = epub.EpubBook()
+
+    # Set metadata
+    epub_book.set_title(book.name or "Untitled Book")
+    epub_book.add_author(book.author or "Unknown Author")
+
+    # Set cover image safely
+    if book.cover and isinstance(book.cover,bytes):
+        epub_book.set_cover("cover.jpg", book.cover)
+    else:
+        print(f"[WARN] 封面图片文件不存在")
+
+    spine = ['nav']
+    epub_chapters = []
+
+    for idx, chapter in enumerate(book.chapters):
+        try:
+            if chapter.isFree == True:
+                chapter_html, img_items = clean_html_with_images(chapter.raw)
+
+                # 构造章节
+                c = epub.EpubHtml(title=chapter.name,
+                                file_name=f'chap_{idx + 1}.xhtml',
+                                lang='zh')
+                c.content = f"<h1>{chapter.name}</h1>{chapter_html}"
+                epub_book.add_item(c)
+
+                for img in img_items:
+                    epub_book.add_item(img)
+
+                epub_chapters.append(c)
+                spine.append(c)  # type: ignore
+            else:
+                # 构造章节
+                c = epub.EpubHtml(title=chapter.name,
+                                file_name=f'chap_{idx + 1}.xhtml',
+                                lang='zh')
+                c.content = f"<h1>{chapter.name}</h1>"
+                epub_book.add_item(c)
+
+                epub_book.add_item(chapter.img)
+
+                epub_chapters.append(c)
+                spine.append(c)  # type: ignore
+        except Exception as e:
+            print(f"[ERROR] 处理第 {idx + 1} 章时出错: {e}")
+
+        # 添加 spine、导航
+    epub_book.spine = spine
+    epub_book.add_item(epub.EpubNcx())
+    epub_book.add_item(epub.EpubNav())
+
+    # ✅ 显式设置目录
+    epub_book.toc = tuple(epub_chapters) # type: ignore
+
+    # 写入 EPUB 文件
     try:
-        title = originBook.name
-        author = originBook.author
-        chapters = originBook.chapters.copy()
-        cover = originBook.cover
-        base_path = output_path
-        
-        Path(output_path).mkdir(parents=True, exist_ok=True)
-        output_file = Path(output_path) / f"{title}.epub"
-        Path(output_file.parent).mkdir(parents=True, exist_ok=True)
-
-        book = epub.EpubBook()
-        book.set_title(title)
-        book.add_author(author)
-        book.set_cover("cover.jpg", cover)
-
-        spine = []
-        toc = []
-        image_cache = {}
-        session = create_session()
-
-        for idx, chapter in enumerate(chapters, start=1):
-            if not chapter.content.raw.strip():
-                continue
-            processed_html = process_html(
-                chapter.content.raw, book, base_path, session, image_cache
-            )
-            file_name = f'chap_{idx}.xhtml'
-            epub_chapter = epub.EpubHtml(
-                title=chapter.name,
-                file_name=file_name,
-                content=processed_html,
-                lang='zh'
-            )
-            book.add_item(epub_chapter)
-            spine.append(epub_chapter)
-            toc.append(epub.Link(file_name, chapter.name, f'chap_{idx}'))
-
-        if not spine:
-            print("No valid chapters to write.")
-            return
-
-        book.toc = toc
-        book.spine = ['nav'] + spine
-        book.add_item(epub.EpubNcx())
-        book.add_item(epub.EpubNav())
-
-        epub.write_epub(str(output_file), book)
-        print(f'✅ EPUB 已创建: {output_file}')
+        epub.write_epub(output_path, epub_book, {})
+        print(f"[INFO] EPUB 成功生成：{output_path}")
     except Exception as e:
-        print(f"写入 EPUB 文件时出错：{e}")
+        print(f"[ERROR] 写入 EPUB 失败: {e}")
+
+
+
+# ✅ 示例用法
+if __name__ == "__main__":
+    sample_html = '''
+        <p>This is a sample paragraph.</p>
+        <p>Another one with <span>noise</span>.</p>
+        <img src="img1.jpg"/>
+        <img src="https://e1.kuangxiangit.com/uploads/allimg/c250510/10-05-25114833-25098.jpg"/>
+    '''
+
+    book = BuiltIn.ClassBook(
+        name="Sample Image Book",
+        author="Author Name",
+        cover=bytes(),  # Should be a bytes object
+        chapters=[
+            BuiltIn.ClassChapter(raw=sample_html,name="c1"),
+            BuiltIn.ClassChapter(raw=sample_html,name="c2"),
+            BuiltIn.ClassChapter(raw=sample_html,name="c3"),
+            
+        ]
+    )
+
+    generate_epub(book, "output.epub")
