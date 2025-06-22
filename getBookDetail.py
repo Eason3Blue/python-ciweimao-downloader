@@ -88,7 +88,6 @@ def getPaidChapter(chapter : BuiltIn.ClassChapter, book : BuiltIn.ClassBook, dev
     
     chapter.content.resp = makeRequest.myRequest(session, chapter.content.url, headers, "get", chapter.content.data)
     chapter.content.img = chapter.content.resp.content
-    doImage.slice_image_fast(chapter.content.img, chapter, device['height'])
     
     #转存图片
     imgDir = f"{book.path}/img"
@@ -100,7 +99,9 @@ def getPaidChapter(chapter : BuiltIn.ClassChapter, book : BuiltIn.ClassBook, dev
         f.write(chapter.content.img)
     
     chapter.content.imgPath = imgPath
-
+    resp = doImage.slice_image_fast(chapter.content.img, chapter, device['height'])
+    if resp == False:
+        getPaidChapter(chapter, book, device)
     # chapter.content.raw = f"<img href='{chapter.content.imgPath}'></img>"
     # chapter.raw = chapter.content.raw
     

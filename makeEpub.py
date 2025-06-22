@@ -73,33 +73,19 @@ def generate_epub(book: BuiltIn.ClassBook, output_path: str):
 
     for idx, chapter in enumerate(book.chapters):
         try:
-            if chapter.isFree == True:
-                chapter_html, img_items = clean_html_with_images(chapter.raw)
+            chapter_html, img_items = clean_html_with_images(chapter.raw)
 
-                # 构造章节
-                c = epub.EpubHtml(title=chapter.name,
-                                file_name=f'chap_{idx + 1}.xhtml',
-                                lang='zh')
-                c.content = f"<h1>{chapter.name}</h1>{chapter_html}"
-                epub_book.add_item(c)
+            # 构造章节
+            c = epub.EpubHtml(title=chapter.name,
+                            file_name=f'chap_{idx + 1}.xhtml',
+                            lang='zh')
+            c.content = f"<h1>{chapter.name}</h1>{chapter_html}"
+            epub_book.add_item(c)
 
-                for img in img_items:
+            for img in img_items:
                     epub_book.add_item(img)
-
-                epub_chapters.append(c)
-                spine.append(c)  # type: ignore
-            else:
-                # 构造章节
-                c = epub.EpubHtml(title=chapter.name,
-                                file_name=f'chap_{idx + 1}.xhtml',
-                                lang='zh')
-                c.content = f"<h1>{chapter.name}</h1>"
-                epub_book.add_item(c)
-
-                epub_book.add_item(chapter.img)
-
-                epub_chapters.append(c)
-                spine.append(c)  # type: ignore
+            epub_chapters.append(c)
+            spine.append(c)  # type: ignore
         except Exception as e:
             print(f"[ERROR] 处理第 {idx + 1} 章时出错: {e}")
 

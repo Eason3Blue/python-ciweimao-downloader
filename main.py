@@ -87,9 +87,9 @@ if __name__ == "__main__":
           f"字号 = {BuiltIn.deviceInfo['point']}")
     
     
-    book = BuiltIn.ClassBook()
     while(True): #下载流程
         #获得书本信息
+        book = BuiltIn.ClassBook()
         book.url = input("输入小说链接(https://example.com): ")
         book.id = int(book.url.split("/")[-1])
         print("book_id: " + str(book.id))
@@ -142,18 +142,13 @@ if __name__ == "__main__":
                     f.write(chapter.content.raw)
             else: #读取已下载章节
                 print(f"第{count}章已经下载，跳过")
-                if chapter.isFree == True:
-                    with open(path, "r", encoding="utf-8") as f:
-                        chapter.content.raw = f.read()
-                    chapter.raw = chapter.content.raw
-                else:
-                    folder = Path(f"{book.id}/img/sliced/{count}/")
-                    for file in folder.iterdir():
-                        if file.is_file():
-                            with open(file, "rb"):
-                                chapter.img.append(file)
+                with open(path, "r", encoding="utf-8") as f:
+                    chapter.content.raw = f.read()
+            chapter.raw = chapter.content.raw
             book.chapters.append(chapter)
             count += 1
+        with open(path, "w", encoding='utf-8') as f: #写入缓存
+            f.write(json.dumps(BuiltIn.accountCookies))
         makeEpub.generate_epub(book, f"{book.path}/epub/{book.name}.epub")
         print("合并完成")
         input("回车进入下一轮下载..")
