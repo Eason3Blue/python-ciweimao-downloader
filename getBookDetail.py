@@ -102,9 +102,7 @@ def getPaidChapter(chapter : BuiltIn.ClassChapter, book : BuiltIn.ClassBook, dev
     resp = doImage.slice_image_fast(chapter.content.img, chapter, device['height'])
     if resp == False:
         getPaidChapter(chapter, book, device)
-    # chapter.content.raw = f"<img href='{chapter.content.imgPath}'></img>"
-    # chapter.raw = chapter.content.raw
-    
+        
     return
 
 def getChapter(chapter : BuiltIn.ClassChapter):

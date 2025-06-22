@@ -104,27 +104,3 @@ def generate_epub(book: BuiltIn.ClassBook, output_path: str):
     except Exception as e:
         print(f"[ERROR] 写入 EPUB 失败: {e}")
 
-
-
-# ✅ 示例用法
-if __name__ == "__main__":
-    sample_html = '''
-        <p>This is a sample paragraph.</p>
-        <p>Another one with <span>noise</span>.</p>
-        <img src="img1.jpg"/>
-        <img src="https://e1.kuangxiangit.com/uploads/allimg/c250510/10-05-25114833-25098.jpg"/>
-    '''
-
-    book = BuiltIn.ClassBook(
-        name="Sample Image Book",
-        author="Author Name",
-        cover=bytes(),  # Should be a bytes object
-        chapters=[
-            BuiltIn.ClassChapter(raw=sample_html,name="c1",isFree=False),
-            BuiltIn.ClassChapter(raw=sample_html,name="c2"),
-            BuiltIn.ClassChapter(raw=sample_html,name="c3"),
-            
-        ]
-    )
-
-    generate_epub(book, "output.epub")
