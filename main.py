@@ -2,8 +2,9 @@ import getLogin
 import autoDownloadChrome
 import makeEpub
 import BuiltIn
-import getSession
+import makeRequest
 import requests
+import random
 import getBookDetail
 from pathlib import Path
 import json, time
@@ -36,7 +37,7 @@ if __name__ == "__main__":
         f.write(json.dumps(BuiltIn.accountCookies))
     
     BuiltIn.session.cookies = requests.utils.cookiejar_from_dict(BuiltIn.accountCookies)
-    getSession.getSession(BuiltIn.session)
+    makeRequest.getSession(BuiltIn.session)
     
     with open(path, "w", encoding='utf-8') as f: #写入缓存
         f.write(json.dumps(BuiltIn.accountCookies))
@@ -131,6 +132,9 @@ if __name__ == "__main__":
                 if chapter.isFree == True:
                     getBookDetail.getChapter(chapter)
                 else:
+                    t = random.random()
+                    print(f"睡眠{t}秒")
+                    time.sleep(random.random())
                     getBookDetail.getPaidChapter(chapter,book,BuiltIn.deviceInfo)
                 print("下载完成")
                 

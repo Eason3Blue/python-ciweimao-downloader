@@ -15,6 +15,10 @@ def slice_image_fast(image:bytes, chapter:BuiltIn.ClassChapter,  max_len: int):
 
     # 解码为灰度图，等效于 cv2.IMREAD_GRAYSCALE
     img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
+    
+    if img.shape[0] < 600:
+        print("此章节内容很少，登录状态可能掉了，也有可能你还未购买。")
+        chapter.isWrong = True
 
     h, w = img.shape
     long_axis = 0 if h > w else 1

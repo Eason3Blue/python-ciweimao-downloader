@@ -134,7 +134,7 @@ if __name__ == "__main__":
         author="Author Name",
         cover=bytes(),  # Should be a bytes object
         chapters=[
-            BuiltIn.ClassChapter(raw=sample_html,name="c1"),
+            BuiltIn.ClassChapter(raw=sample_html,name="c1",isFree=False),
             BuiltIn.ClassChapter(raw=sample_html,name="c2"),
             BuiltIn.ClassChapter(raw=sample_html,name="c3"),
             

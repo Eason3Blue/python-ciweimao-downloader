@@ -30,7 +30,8 @@ class ClassChapter:
     url: str = field(default_factory=str)
     raw: str = field(default_factory=str)
     img: list = field(default_factory=list)
-    isFree: bool = field(default_factory=bool)
+    isFree: bool = True
+    isWrong: bool = False
     access: ClassAccess = field(default_factory=ClassAccess)
     content: ClassContent = field(default_factory=ClassContent)
 @dataclass

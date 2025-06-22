@@ -1,6 +1,8 @@
 import requests
 import decrypt
 import json
+import makeRequest
+from pathlib import Path
 import doImage
 import BuiltIn
 from bs4 import BeautifulSoup
@@ -20,7 +22,7 @@ def getContent(book : BuiltIn.ClassBook):
     }
     
     response = requests.post(url,headers=headers,data=data)
-
+    
     soup = BeautifulSoup(response.text, "html.parser")
     
     for li in soup.select("ul.book-chapter-list li"):
@@ -43,7 +45,8 @@ def getName(book : BuiltIn.ClassBook):
     headers = BuiltIn.defaultHeaders.copy()
     headers["Referer"] = book.url
     
-    response = session.get(book.url,headers=headers)
+    response = makeRequest.myRequest(BuiltIn.session, book.url, headers, "get")
+    
     if(response.status_code != 200):
         book.status = False
         return
@@ -67,10 +70,7 @@ def getPaidChapter(chapter : BuiltIn.ClassChapter, book : BuiltIn.ClassBook, dev
     headers["Referer"] = chapter.url
     chapter.access.data = {}
     
-    chapter.access.resp = session.post(
-        url = chapter.access.url,
-        headers = headers
-    )
+    chapter.access.resp = makeRequest.myRequest(session, chapter.access.url, headers, "post")
     chapter.access.json = json.loads(chapter.access.resp.text)
     decrypt.decryptImgId(chapter.access)
 
@@ -86,23 +86,20 @@ def getPaidChapter(chapter : BuiltIn.ClassChapter, book : BuiltIn.ClassBook, dev
         "text_color_name": "white"
     }
     
-    chapter.content.resp = session.get(
-        url = chapter.content.url,
-        headers = headers,
-        params = chapter.content.data)
+    chapter.content.resp = makeRequest.myRequest(session, chapter.content.url, headers, "get", chapter.content.data)
+    chapter.content.img = chapter.content.resp.content
     doImage.slice_image_fast(chapter.content.img, chapter, device['height'])
+    
     #转存图片
-    # from pathlib import Path
-    # imgDir = f"{book.path}/img"
-    # imgDirPath = Path(imgDir)
-    # imgDirPath.mkdir(parents=True, exist_ok=True)
-    # chapter.content.imgDir = imgDir
-    # imgPath = f"{book.path}/img/{chapter.countId}.jpg"
+    imgDir = f"{book.path}/img"
+    imgDirPath = Path(imgDir)
+    chapter.content.imgDir = imgDir
+    imgPath = f"{book.path}/img/{chapter.countId}.jpg"
     
-    # with open(Path(imgPath),"wb") as f:
-    #     f.write(chapter.content.img)
+    with open(Path(imgPath),"wb") as f:
+        f.write(chapter.content.img)
     
-    # chapter.content.imgPath = imgPath
+    chapter.content.imgPath = imgPath
 
     # chapter.content.raw = f"<img href='{chapter.content.imgPath}'></img>"
     # chapter.raw = chapter.content.raw
@@ -120,18 +117,12 @@ def getChapter(chapter : BuiltIn.ClassChapter):
         "chapter_id": chapter.id
     }
     
-    chapter.access.key = json.loads(session.post(
-        url=chapter.access.url,
-        data=chapter.access.data,
-        headers=headers).text).get("chapter_access_key")
+    chapter.access.key = json.loads(makeRequest.myRequest(session,chapter.access.url, headers,"post", chapter.access.data).text).get("chapter_access_key")
 
     #获得章节内容
     chapter.content.data = chapter.access.data.copy()
     chapter.content.data["chapter_access_key"] = chapter.access.key
-    chapter.content.json = json.loads(session.post(
-        url=chapter.content.url,
-        data=chapter.content.data,
-        headers=headers).text)
+    chapter.content.json = json.loads(makeRequest.myRequest(session, chapter.content.url, headers, "post", chapter.content.data).text)
     chapter.content.status = chapter.content.json["code"] # type: ignore
     
     if(chapter.content.status == 400001):
