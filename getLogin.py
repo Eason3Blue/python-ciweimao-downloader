@@ -5,8 +5,8 @@ import time
 import BuiltIn
 
 def getLogin():
-    chrome_driver_path = "chromedriver\\chromedriver.exe"
-    chrome_binary_path = "chrome\\chrome.exe"  # 指定浏览器路径
+    chrome_driver_path = "chromedriver/chromedriver.exe"
+    chrome_binary_path = "chrome/chrome.exe"  # 指定浏览器路径
     options = Options()
     options.add_argument("--start-maximized")
 

@@ -12,14 +12,14 @@ from dataclasses import dataclass, field
 expireTime = 0
 
 if __name__ == "__main__":
-    chromePath = Path("./chrome\\chrome.exe")
-    chromeDriverPath = Path('./chromedriver\\chromedriver.exe')
+    chromePath = Path("chrome/chrome.exe")
+    chromeDriverPath = Path('chromedriver/chromedriver.exe')
     if chromePath.exists() == False or chromeDriverPath.exists() == False :
         print("未下载chrome，正在下载中...")
         autoDownloadChrome.main()
     
     #读取缓存
-    path = Path('./accountCookies.json')
+    path = Path('accountCookies.json')
     if not path.exists():
         print(f"文件不存在：{path}")
         cacheReadResponse = False

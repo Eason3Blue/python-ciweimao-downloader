@@ -85,9 +85,9 @@ def image_to_text(imgPath:str, lang='ch'):
     try:
         # 初始化OCR
         ocr = PaddleOCR(
-            text_detection_model_dir='./paddlex\\official_models\\PP-OCRv5_mobile_det',
+            text_detection_model_dir='paddlex/official_models/PP-OCRv5_mobile_det',
             text_detection_model_name="PP-OCRv5_mobile_det",
-            text_recognition_model_dir='./paddlex\\official_models\\PP-OCRv5_mobile_rec',
+            text_recognition_model_dir='paddlex/official_models/PP-OCRv5_mobile_rec',
             text_recognition_model_name="PP-OCRv5_mobile_rec",
             use_doc_orientation_classify=False,
             use_doc_unwarping=False,
