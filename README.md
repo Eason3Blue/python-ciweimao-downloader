@@ -3,6 +3,10 @@
 #### 介绍
 使用python编写的针对刺猬猫的下载程序，可以轻而易举地登录，自动识别付费章节，自动调用ocr模型识别文字，下载小说并自动压入epub
 
+#### 下载链接
+https://wwob.lanzoum.com/b0ko7ra2b
+密码:a5f4
+
 #### 使用教程
 
 4. 先下载release中的python压缩包（zip和7z内容一样），并把它解压到一个名为python的文件夹下
