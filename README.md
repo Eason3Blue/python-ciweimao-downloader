@@ -5,10 +5,10 @@
 
 #### 使用教程
 
--4. 先下载release中的venv压缩包
--3. 再下载此项目的源代码的压缩包，并解压到一个纯英文路径的文件夹（比如D:\cwmDown）
--2. 把venv.zip或者是.7z解压到venv文件夹中，再把这个venv文件夹挪到源代码根目录下（比如downloads\venv ->  D:\cwmDown\venv）
--1. 双击运行A1 Run.bat
+4. 先下载release中的python压缩包（zip和7z内容一样），并把它解压到一个名为python的文件夹下
+3. 再下载此项目的源代码的压缩包，并解压到一个纯英文路径的文件夹（比如D:\cwmDown）
+2. 把刚才的python文件夹挪到源代码根目录下（比如下载\python ->  D:\cwmDown\python）
+1. 双击运行A1 Run.bat
 0. 输入`python main.py`
 1.  首次运行，会自动下载chrome浏览器
 2.  最好挂上能上谷歌的梯
